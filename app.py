@@ -1,5 +1,5 @@
-from flask import Flask
-from models import db, User
+from flask import Flask, make_response
+from models import db, User, Post
 from flask_migrate import Migrate
 
 
@@ -21,6 +21,13 @@ def about():
 @app.route("/<username>")
 def username(username):
     return f'Hello {username}'
+
+@app.route('/posts')
+def post():
+    posts = Post.query.all()
+    posts_list = [post.to_dict() for post in posts]
+    return make_response(posts_list)
+    
 
 if __name__=='__main__':
     app.run(debug=True, port=4000)
