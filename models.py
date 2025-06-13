@@ -17,6 +17,9 @@ class User(db.Model, SerializerMixin):
 class Post(db.Model, SerializerMixin):
     __tablename__ = "posts"
 
+    serialize_rules = ('-user.posts',)
+    #serialize_only = ('id', 'post_title')
+
     id = db.Column(db.Integer, primary_key=True)
     post_title = db.Column(db.String, nullable=False)
     post_content = db.Column(db.String)
