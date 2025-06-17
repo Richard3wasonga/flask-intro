@@ -26,10 +26,14 @@ api = Api(app)
     #return "This is about us page"
 
 class PostEndpoint(Resource):
-    def get(self):
-        posts = [post.to_dict() for post in Post.query.all()]
-        return make_response(posts, 200)
-
+     def get(self, id):
+        post = Post.query.filter_by(id=id).first()
+        if post:
+            return make_response(post.to_dict(), 200)
+        else:
+            response = {"message": "Post you searched for does not exist"}
+            return make_response(jsonify(response), 404)
+            
     def post(self):
         data = request.get_json()
         new_post = Post(post_title=data['post_title'], post_content=data['post_content'], user_id=data['user_id'])
