@@ -1,8 +1,8 @@
-"""new crated database
+"""new database
 
-Revision ID: 6449b73086ba
+Revision ID: 65b315118046
 Revises: 
-Create Date: 2025-06-12 10:32:57.991379
+Create Date: 2025-06-18 10:47:52.052635
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '6449b73086ba'
+revision = '65b315118046'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -23,13 +23,18 @@ def upgrade():
     sa.Column('first_name', sa.String(), nullable=True),
     sa.Column('middle_name', sa.String(), nullable=True),
     sa.Column('last_name', sa.String(), nullable=True),
-    sa.Column('username', sa.String(), nullable=True),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('username', sa.String(length=50), nullable=False),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('password', sa.String(), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('username')
     )
     op.create_table('posts',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('post_title', sa.String(), nullable=False),
     sa.Column('post_content', sa.String(), nullable=True),
+    sa.Column('post_image', sa.String(), nullable=True),
     sa.Column('user_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
