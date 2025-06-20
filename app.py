@@ -1,11 +1,11 @@
 from flask import Flask, make_response, request
 from flask_migrate import Migrate
-from models import db, User, Post
+from models import db, User, Post, TokenBlocklist
 from blueprint.post import post_bp
 from blueprint.user import user_bp
 from flask_restful import Api, Resource
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt, get_jwt_identity
 
 # create the app
 app = Flask(__name__)
@@ -94,6 +94,26 @@ class RegisterUser(Resource):
 
         return make_response({'message': 'User created successfully'}, 201)
 
+@jwt.token_in_blocklist_loader
+def token_in_blocklist(jwt_header, jwt_data):
+    jti = jwt_data['jti']
+
+    token = db.session.query(TokenBlocklist).filter(TokenBlocklist.jti=jti).scalar()
+
+    return token is not None
+
+@jwt.expired_token_loader
+def expired_jwt_token(jwt_header, jwt_data):
+    return make_response({'error' : 'Token has expired'})
+
+@jwt.invalid_token_loader
+def jwt_invalid_token(error):
+    return make_response({'error' : 'Invalid token'})
+
+@jwt.unauthorized_loader
+def jwt_missing_token(error):
+    return make_response({'error' : 'Missing token'})
+
 class LoginUser(Resource):
     def post(self):
         data = request.getget_json()
@@ -114,11 +134,33 @@ class LoginUser(Resource):
         return make_response({"error" : "Invalid username or password"}, 403) 
 
 class LogoutUser(Resource):
-    pass
+    @jtw_required(verify_type=False)
+    def get(self):
+
+        jwt = get_jwt()
+        jti = jwt['jti']
+
+        token_type = jwt['type']
+
+        new_jti_obj = TokenBlocklist(jti=jti)
+        db.session.add(new_jti_obj)
+        db.session.commit()
+
+        return make_response({'message' : f'{token_type} token revoked successfully'}, 200)
+
+    class RefreshToken(Resource):
+        @jwt_required(refresh=True)
+        def get(self):
+            identity = get_jwt_identity()
+            new_access_token = create_access_token(identity=identity)
+            return make_response({'access_token' : access_token})
+
 
 api.add_resource(PostEndpoint, '/posts')
 api.add_resource(PostEndpointById, '/posts/<int:id>')
 api.add_resource(LoginUser, '/login')
+api.add_resource(LogoutUser, '/logout')
+api.add_resource(RefreshToken, '/refresh')
 
     
 if __name__ == '__main__':
